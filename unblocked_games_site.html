@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Unblocked Games</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; background: #f4f6f8; color: #333; line-height: 1.4; min-height: 100vh; display: flex; flex-direction: column; }
+    a { color: inherit; text-decoration: none; }
+    img { max-width: 100%; display: block; }
+    header { background: #fff; padding: 1rem 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    header h1 { font-size: 1.5rem; }
+    main { flex: 1; padding: 1rem 1.5rem; }
+    .game-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 1rem; }
+    .game-card { background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; }
+    .game-card:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+    .game-card img { width: 100%; height: 100px; object-fit: cover; background: #ddd; }
+    .game-card .title { padding: 0.5rem; font-size: 0.95rem; text-align: center; color: #333; }
+    .play-container { max-width: 100%; width: 100%; height: calc(100vh - 160px); background: #000; position: relative; }
+    .play-container iframe { width: 100%; height: 100%; border: none; }
+    .back-button { margin-bottom: 1rem; display: inline-block; padding: 0.4rem 0.8rem; background: #007bff; color: white; border-radius: 4px; transition: background 0.2s; }
+    .back-button:hover { background: #0056b3; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Unblocked Games</h1>
+  </header>
+  <main id="main-content">
+    <div id="loading">Loading games…</div>
+  </main>
+  <script>
+    (function(){
+      const RAW_JSON_URL = "https://raw.githubusercontent.com/swarmintelli/Unblocked-Games-CDN/main/games.json";
+      let games = [];
+      const main = document.getElementById("main-content");
+      function showGameList() {
+        main.innerHTML = "";
+        const grid = document.createElement("div");
+        grid.className = "game-list";
+        games.forEach(game => {
+          const card = document.createElement("div");
+          card.className = "game-card";
+          card.onclick = () => {
+            showGamePlay(game);
+            history.pushState({ gameId: game["game-id"] }, "", `?game=${encodeURIComponent(game["game-id"])}`);
+          };
+          const img = document.createElement("img");
+          img.src = game.game_image_icon;
+          img.alt = game.name;
+          const title = document.createElement("div");
+          title.className = "title";
+          title.textContent = game.name;
+          card.appendChild(img);
+          card.appendChild(title);
+          grid.appendChild(card);
+        });
+        main.appendChild(grid);
+      }
+      function showGamePlay(game) {
+        main.innerHTML = "";
+        const back = document.createElement("a");
+        back.className = "back-button";
+        back.textContent = "← Back to Games";
+        back.href = "#";
+        back.onclick = (e) => {
+          e.preventDefault();
+          showGameList();
+          history.pushState({}, "", ".");
+        };
+        main.appendChild(back);
+        const container = document.createElement("div");
+        container.className = "play-container";
+        container.innerHTML = game.iframe;
+        main.appendChild(container);
+      }
+      function findGameById(id) {
+        return games.find(g => g["game-id"] === id);
+      }
+      function handleInitialState() {
+        const params = new URLSearchParams(location.search);
+        const gid = params.get("game");
+        if (gid) {
+          const g = findGameById(gid);
+          if (g) { showGamePlay(g); return; }
+        }
+        showGameList();
+      }
+      function fetchGames() {
+        fetch(RAW_JSON_URL)
+          .then(r => r.json())
+          .then(data => { games = data; handleInitialState(); })
+          .catch(err => { console.error("Failed to load games JSON:", err); main.innerHTML = "<p>Failed to load games. Try again later.</p>"; });
+      }
+      window.onpopstate = (ev) => {
+        if (ev.state && ev.state.gameId) {
+          const g = findGameById(ev.state.gameId);
+          if (g) { showGamePlay(g); } else { showGameList(); }
+        } else { showGameList(); }
+      };
+      fetchGames();
+    })();
+  </script>
+</body>
+</html>
